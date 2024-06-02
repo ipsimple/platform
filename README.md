@@ -27,6 +27,7 @@ Integrating IpSimple into your application is incredibly easy. Simply use one of
 ```bash
 # Retrieve your public IP address in JSON format
 $ curl 'https://api.ipsimple.org?format=json'
+```
 
 ## Installation
 
@@ -82,4 +83,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-For any inquiries or feedback, please contact us at [support@ipsimple.org](mailto:support@ipsimple.org).
+For any inquiries or feedback, please raise an issue here https://github.com/ipsimple/platform/issues
