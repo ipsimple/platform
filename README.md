@@ -47,14 +47,24 @@ $ curl 'https://api.ipsimple.org?format=json'
     cd platform
     ```
 
-2. Install dependencies:
+2. Login to Azure:
     ```bash
-    npm install
+    az login
     ```
 
-3. Start the development server:
+3. Set your subscription:
     ```bash
-    npm start
+    az account set --subscription {subscription-id}
+    ```
+
+4. Compile the Bicep files:
+    ```bash
+    az bicep build --files ./path/to/your/bicep/file.bicep
+    ```
+
+5. Deploy the Bicep files:
+    ```bash
+    az deployment group create --resource-group {resource-group-name} --template-file ./path/to/your/bicep/file.json
     ```
 
 ## Contributing
