@@ -1,0 +1,65 @@
+<!--
+    - Policies are applied in the order they appear.
+    - Position <base/> inside a section to inherit policies from the outer scope.
+    - Comments within policies are not preserved.
+-->
+<!-- Add policies as children to the <inbound>, <outbound>, <backend>, and <on-error> elements -->
+<policies>
+	<!-- Throttle, authorize, validate, cache, or transform the requests -->
+	<inbound>
+		<base />
+		<!-- Extract the client's IP address from the X-Forwarded-For header -->
+		<set-variable name="xForwardedFor" value="@(context.Request.Headers.GetValueOrDefault("X-Forwarded-For", ""))" />
+		<!-- Determine the client's IP address -->
+		<set-variable name="clientIp" value="@{
+            var xForwardedFor = context.Variables.GetValueOrDefault<string>("xForwardedFor", null);
+            if (!string.IsNullOrEmpty(xForwardedFor))
+            {
+            var ipAddresses = xForwardedFor.Split(',');
+            return ipAddresses[ipAddresses.Length - 1].Trim();
+            }
+            return context.Request.Headers.GetValueOrDefault("X-Azure-ClientIP", context.Request.IpAddress);
+        }" />
+		<!-- Check the format query parameter -->
+		<choose>
+			<when condition="@(context.Request.MatchedParameters.ContainsKey("format") && context.Request.MatchedParameters["format"] != null && context.Request.MatchedParameters["format"].Equals("json", StringComparison.OrdinalIgnoreCase))">
+				<!-- Return the IP address in JSON format -->
+				<return-response>
+					<set-status code="200" reason="OK" />
+					<set-header name="Content-Type" exists-action="override">
+						<value>application/json</value>
+					</set-header>
+					<set-body template="liquid">
+                {
+                    "ip": "@{{context.Variables.clientIp}}"
+                }
+                </set-body>
+				</return-response>
+			</when>
+			<otherwise>
+				<!-- Return the IP address in plain text format -->
+				<return-response>
+					<set-status code="200" reason="OK" />
+					<set-header name="Content-Type" exists-action="override">
+						<value>text/plain</value>
+					</set-header>
+					<set-body template="liquid">
+                    "@{{context.Variables.clientIp}}"
+                </set-body>
+				</return-response>
+			</otherwise>
+		</choose>
+	</inbound>
+	<!-- Control if and how the requests are forwarded to services  -->
+	<backend>
+		<base />
+	</backend>
+	<!-- Customize the responses -->
+	<outbound>
+		<base />
+	</outbound>
+	<!-- Handle exceptions and customize error responses  -->
+	<on-error>
+		<base />
+	</on-error>
+</policies>
