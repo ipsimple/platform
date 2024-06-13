@@ -17,7 +17,7 @@ on:
         type: string
 
 env:
-  apiops_release_version: v6.0.0-alpha.1.0.9
+  apiops_release_version: v5.1.4
   #By default, this will be Information but if you want something different you will need to add a variable in the Settings -> Environment -> Environment variables section
   Logging__LogLevel__Default: ${{ vars.LOG_LEVEL }}
 
@@ -68,40 +68,32 @@ jobs:
           $VerbosePreference = "Continue"
           $InformationPreference = "Continue"
 
-          Write-Information "Setting name variables..."
-          $releaseFileName = "publisher-linux-x64.zip"
-          $executableFileName = "publisher"
-
+          Write-Information "Downloading publisher..."
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
           if ("${{ runner.os }}" -like "*win*") {
-            $releaseFileName = "publisher-win-x64.zip"
-            $executableFileName = "publisher.exe"
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
           }
           elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*") {
-            $releaseFileName = "publisher-osx-arm64.zip"
+            $publisherFileName = "publisher.osx-arm64"
           }
           elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
-            $releaseFileName = "publisher-osx-x64.zip"
+            $publisherFileName = "publisher.osx-x64"
           }
+          
+          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
+          Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
-          Write-Information "Downloading release..."
-          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$releaseFileName"
-          $downloadFilePath = Join-Path "${{ runner.temp }}" $releaseFileName
-          Invoke-WebRequest -Uri "$uri" -OutFile "$downloadFilePath"
-
-          Write-Information "Extracting release..."
-          $executableFolderPath = Join-Path "${{ runner.temp }}" "publisher"
-          Expand-Archive -Path "$downloadFilePath" -DestinationPath "$executableFolderPath"
-          $executableFilePath = Join-Path "$executableFolderPath" $executableFileName
-
-          Write-Information "Setting file permissions..."
           if ("${{ runner.os }}" -like "*linux*")
           {
-            & chmod +x "$executableFilePath"
+            Write-Information "Setting file permissions..."
+            & chmod +x "$destinationFilePath"
             if ($LASTEXITCODE -ne 0) { throw "Setting file permissions failed."}
           }
 
-          Write-Information "Running publisher..."
-          & "$executableFilePath"              
+          & "$destinationFilePath"              
           if ($LASTEXITCODE -ne 0) { throw "Running publisher failed."}
 
           Write-Information "Execution complete."
@@ -123,40 +115,32 @@ jobs:
           $VerbosePreference = "Continue"
           $InformationPreference = "Continue"
 
-          Write-Information "Setting name variables..."
-          $releaseFileName = "publisher-linux-x64.zip"
-          $executableFileName = "publisher"
-
-          if ("${{ runner.os }}" -like "*win*") {
-            $releaseFileName = "publisher-win-x64.zip"
-            $executableFileName = "publisher.exe"
+          Write-Information "Downloading publisher..."
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
+          if("${{ runner.os }}" -like "*win*"){
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
           }
-          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*") {
-            $releaseFileName = "publisher-osx-arm64.zip"
+          elseif("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*"){
+            $publisherFileName = "publisher.osx-arm64"
           }
           elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
-            $releaseFileName = "publisher-osx-x64.zip"
+            $publisherFileName = "publisher.osx-x64"
           }
+          
+          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
+          Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
-          Write-Information "Downloading release..."
-          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$releaseFileName"
-          $downloadFilePath = Join-Path "${{ runner.temp }}" $releaseFileName
-          Invoke-WebRequest -Uri "$uri" -OutFile "$downloadFilePath"
-
-          Write-Information "Extracting release..."
-          $executableFolderPath = Join-Path "${{ runner.temp }}" "publisher"
-          Expand-Archive -Path "$downloadFilePath" -DestinationPath "$executableFolderPath"
-          $executableFilePath = Join-Path "$executableFolderPath" $executableFileName
-
-          Write-Information "Setting file permissions..."
           if ("${{ runner.os }}" -like "*linux*")
           {
-            & chmod +x "$executableFilePath"
+            Write-Information "Setting file permissions..."
+            & chmod +x "$destinationFilePath"
             if ($LASTEXITCODE -ne 0) { throw "Setting file permissions failed."}
           }
 
-          Write-Information "Running publisher..."
-          & "$executableFilePath"              
+          & "$destinationFilePath"              
           if ($LASTEXITCODE -ne 0) { throw "Running publisher failed."}
 
           Write-Information "Execution complete."
@@ -180,40 +164,32 @@ jobs:
           $VerbosePreference = "Continue"
           $InformationPreference = "Continue"
 
-          Write-Information "Setting name variables..."
-          $releaseFileName = "publisher-linux-x64.zip"
-          $executableFileName = "publisher"
-
-          if ("${{ runner.os }}" -like "*win*") {
-            $releaseFileName = "publisher-win-x64.zip"
-            $executableFileName = "publisher.exe"
+          Write-Information "Downloading publisher..."
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
+          if("${{ runner.os }}" -like "*win*"){
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
           }
-          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*") {
-            $releaseFileName = "publisher-osx-arm64.zip"
+          elseif("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*"){
+            $publisherFileName = "publisher.osx-arm64"
           }
           elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
-            $releaseFileName = "publisher-osx-x64.zip"
+            $publisherFileName = "publisher.osx-x64"
           }
+          
+          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
+          Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
-          Write-Information "Downloading release..."
-          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$releaseFileName"
-          $downloadFilePath = Join-Path "${{ runner.temp }}" $releaseFileName
-          Invoke-WebRequest -Uri "$uri" -OutFile "$downloadFilePath"
-
-          Write-Information "Extracting release..."
-          $executableFolderPath = Join-Path "${{ runner.temp }}" "publisher"
-          Expand-Archive -Path "$downloadFilePath" -DestinationPath "$executableFolderPath"
-          $executableFilePath = Join-Path "$executableFolderPath" $executableFileName
-
-          Write-Information "Setting file permissions..."
           if ("${{ runner.os }}" -like "*linux*")
           {
-            & chmod +x "$executableFilePath"
+            Write-Information "Setting file permissions..."
+            & chmod +x "$destinationFilePath"
             if ($LASTEXITCODE -ne 0) { throw "Setting file permissions failed."}
           }
 
-          Write-Information "Running publisher..."
-          & "$executableFilePath"              
+          & "$destinationFilePath"              
           if ($LASTEXITCODE -ne 0) { throw "Running publisher failed."}
 
           Write-Information "Execution complete."
@@ -236,40 +212,32 @@ jobs:
           $VerbosePreference = "Continue"
           $InformationPreference = "Continue"
 
-          Write-Information "Setting name variables..."
-          $releaseFileName = "publisher-linux-x64.zip"
-          $executableFileName = "publisher"
-
-          if ("${{ runner.os }}" -like "*win*") {
-            $releaseFileName = "publisher-win-x64.zip"
-            $executableFileName = "publisher.exe"
+          Write-Information "Downloading publisher..."
+          $publisherFileName = "publisher.linux-x64"
+          $publisherFinalFileName = "publisher"
+          if("${{ runner.os }}" -like "*win*"){
+            $publisherFileName = "publisher.win-x64.exe"
+            $publisherFinalFileName = "publisher.exe"
           }
-          elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*") {
-            $releaseFileName = "publisher-osx-arm64.zip"
+          elseif("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*arm*"){
+            $publisherFileName = "publisher.osx-arm64"
           }
           elseif ("${{ runner.os }}" -like "*mac*" -and "${{ runner.arch }}" -like "*x86_64*") {
-            $releaseFileName = "publisher-osx-x64.zip"
+            $publisherFileName = "publisher.osx-x64"
           }
+          
+          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$publisherFileName"
+          $destinationFilePath = Join-Path "${{ runner.temp }}" $publisherFinalFileName
+          Invoke-WebRequest -Uri "$uri" -OutFile "$destinationFilePath"
 
-          Write-Information "Downloading release..."
-          $uri = "https://github.com/Azure/apiops/releases/download/${{ env.apiops_release_version }}/$releaseFileName"
-          $downloadFilePath = Join-Path "${{ runner.temp }}" $releaseFileName
-          Invoke-WebRequest -Uri "$uri" -OutFile "$downloadFilePath"
-
-          Write-Information "Extracting release..."
-          $executableFolderPath = Join-Path "${{ runner.temp }}" "publisher"
-          Expand-Archive -Path "$downloadFilePath" -DestinationPath "$executableFolderPath"
-          $executableFilePath = Join-Path "$executableFolderPath" $executableFileName
-
-          Write-Information "Setting file permissions..."
           if ("${{ runner.os }}" -like "*linux*")
           {
-            & chmod +x "$executableFilePath"
+            Write-Information "Setting file permissions..."
+            & chmod +x "$destinationFilePath"
             if ($LASTEXITCODE -ne 0) { throw "Setting file permissions failed."}
           }
 
-          Write-Information "Running publisher..."
-          & "$executableFilePath"              
+          & "$destinationFilePath"              
           if ($LASTEXITCODE -ne 0) { throw "Running publisher failed."}
 
           Write-Information "Execution complete."
