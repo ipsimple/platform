@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>IpSimple.PublicIp.Api.BenchmarkTesting.ApiBenchmark-20240711-184648</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.3880/23H2/2023Update/SunValley3)
+11th Gen Intel Core i7-11700K 3.60GHz, 1 CPU, 16 logical and 8 physical cores
+.NET SDK 8.0.302
+  [Host]     : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+  DefaultJob : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method</th><th>Mean</th><th>Error</th><th>StdDev</th>
+</tr>
+</thead><tbody><tr><td>GetIpv4</td><td>109.0 &mu;s</td><td>1.98 &mu;s</td><td>3.57 &mu;s</td>
+</tr><tr><td>GetIpv4All</td><td>108.3 &mu;s</td><td>2.09 &mu;s</td><td>3.44 &mu;s</td>
+</tr><tr><td>GetIpv6</td><td>107.8 &mu;s</td><td>2.15 &mu;s</td><td>3.41 &mu;s</td>
+</tr><tr><td>GetIpv6All</td><td>108.2 &mu;s</td><td>2.15 &mu;s</td><td>2.80 &mu;s</td>
+</tr></tbody></table>
+</body>
+</html>

@@ -35,6 +35,36 @@ paths:
                     example: "98.207.254.136"
         '429':
           description: Too many requests
+  /ipv4/all:
+    get:
+      summary: All Public IPv4 addresses
+      description: This endpoint returns all public IPv4 addresses from the X-Forwarded-For header.
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [json, plain]
+          required: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "98.207.254.136, 203.0.113.195"
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ips:
+                    type: array
+                    items:
+                      type: string
+                    example: ["98.207.254.136", "203.0.113.195"]
+        '429':
+          description: Too many requests
   /ipv6:
     get:
       summary: Public IPv6 address
@@ -61,5 +91,35 @@ paths:
                   ip:
                     type: string
                     example: "2a00:1450:400f:80d::200e"
+        '429':
+          description: Too many requests
+  /ipv6/all:
+    get:
+      summary: All Public IPv6 addresses
+      description: This endpoint returns all public IPv6 addresses from the X-Forwarded-For header.
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [json, plain]
+          required: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "2a00:1450:400f:80d::200e, 2a00:1450:400f:80d::200f"
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ips:
+                    type: array
+                    items:
+                      type: string
+                    example: ["2a00:1450:400f:80d::200e", "2a00:1450:400f:80d::200f"]
         '429':
           description: Too many requests
