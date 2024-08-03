@@ -47,13 +47,6 @@ jobs:
         format: 'table'
         exit-code: '1' # Exit code 1 if vulnerabilities are found
 
-    - name: Tag and push base image to GitHub Packages
-      run: |
-        docker tag mcr.microsoft.com/dotnet/aspnet:8.0 ghcr.io/ipsimple/aspnet:8.0
-        docker tag mcr.microsoft.com/dotnet/sdk:8.0 ghcr.io/ipsimple/sdk:8.0
-        docker push ghcr.io/ipsimple/aspnet:8.0
-        docker push ghcr.io/ipsimple/sdk:8.0
-
     - name: Generate SBOM for ASP.NET
       run: |
         syft packages docker:ghcr.io/ipsimple/aspnet:8.0 -o syft-json > sbom-aspnet.json
@@ -73,3 +66,49 @@ jobs:
       with:
         name: sbom-sdk
         path: sbom-sdk.json
+
+    - name: Build and push ASP.NET base image
+      id: build_aspnet
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/ipsimple/aspnet:8.0
+
+    - name: Build and push SDK base image
+      id: build_sdk
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/ipsimple/sdk:8.0
+
+    - name: Generate artifact attestation for ASP.NET
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/ipsimple/aspnet
+        subject-digest: ${{ steps.build_aspnet.outputs.digest }}
+        push-to-registry: true
+
+    - name: Generate artifact attestation for SDK
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/ipsimple/sdk
+        subject-digest: ${{ steps.build_sdk.outputs.digest }}
+        push-to-registry: true
+
+    - name: Generate SBOM attestation for ASP.NET
+      uses: actions/attest-sbom@v1
+      with:
+        subject-name: ghcr.io/ipsimple/aspnet
+        subject-digest: ${{ steps.build_aspnet.outputs.digest }}
+        sbom-path: sbom-aspnet.json
+        push-to-registry: true
+
+    - name: Generate SBOM attestation for SDK
+      uses: actions/attest-sbom@v1
+      with:
+        subject-name: ghcr.io/ipsimple/sdk
+        subject-digest: ${{ steps.build_sdk.outputs.digest }}
+        sbom-path: sbom-sdk.json
+        push-to-registry: true
