@@ -1,0 +1,48 @@
+@baseUrl = http://localhost:5021
+### Test Public IPv4 Address in Plain Text Format
+GET {{baseUrl}}/ipv4
+Accept: text/plain
+X-Forwarded-For: 98.207.254.136
+X-Azure-ClientIP: 203.0.113.195
+
+### Test Public IPv4 Address in JSON Format
+GET {{baseUrl}}/ipv4?format=json
+Accept: application/json
+X-Forwarded-For: 98.207.254.136
+X-Azure-ClientIP: 203.0.113.195
+
+### Test Public IPv4 Address in Plain Text Format (All IPs)
+GET {{baseUrl}}/ipv4/all
+Accept: text/plain
+X-Forwarded-For: 98.207.254.136, 203.0.113.195
+X-Azure-ClientIP: 203.0.113.195
+
+### Test Public IPv4 Address in JSON Format (All IPs)
+GET {{baseUrl}}/ipv4/all?format=json
+Accept: application/json
+X-Forwarded-For: 98.207.254.136, 203.0.113.195
+X-Azure-ClientIP: 203.0.113.195
+
+### Test Public IPv6 Address in Plain Text Format
+GET {{baseUrl}}/ipv6
+Accept: text/plain
+X-Forwarded-For: 2a00:1450:400f:80d::200e
+X-Azure-ClientIP: 2a00:1450:400f:80d::200e
+
+### Test Public IPv6 Address in JSON Format
+GET {{baseUrl}}/ipv6?format=json
+Accept: application/json
+X-Forwarded-For: 2a00:1450:400f:80d::200e
+X-Azure-ClientIP: 2a00:1450:400f:80d::200e
+
+### Test Public IPv6 Address in Plain Text Format (All IPs)
+GET {{baseUrl}}/ipv6/all
+Accept: text/plain
+X-Forwarded-For: 2a00:1450:400f:80d::200e, 2a00:1450:400f:80d::200f
+X-Azure-ClientIP: 2a00:1450:400f:80d::200e
+
+### Test Public IPv6 Address in JSON Format (All IPs)
+GET {{baseUrl}}/ipv6/all?format=json
+Accept: application/json
+X-Forwarded-For: 2a00:1450:400f:80d::200e, 2a00:1450:400f:80d::200f
+X-Azure-ClientIP: 2a00:1450:400f:80d::200e
