@@ -11,11 +11,6 @@ jobs:
       contents: read
       packages: write
       id-token: write
-      attestations: write
-
-    outputs:
-      aspnet_digest: ${{ steps.push_aspnet.outputs.digest }}
-      sdk_digest: ${{ steps.push_sdk.outputs.digest }}
 
     steps:
     - name: Checkout repository
@@ -82,8 +77,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write
-      attestations: write
 
     steps:
     - name: Checkout repository
@@ -102,11 +95,11 @@ jobs:
 
     - name: Generate SBOM for ASP.NET
       run: |
-        syft packages docker:ghcr.io/ipsimple/aspnet:8.0 -o syft-json > sbom-aspnet.json
+        syft docker:ghcr.io/ipsimple/aspnet:8.0 -o syft-json > sbom-aspnet.json
 
     - name: Generate SBOM for SDK
       run: |
-        syft packages docker:ghcr.io/ipsimple/sdk:8.0 -o syft-json > sbom-sdk.json
+        syft docker:ghcr.io/ipsimple/sdk:8.0 -o syft-json > sbom-sdk.json
 
     - name: Upload SBOM for ASP.NET
       uses: actions/upload-artifact@v2
@@ -119,64 +112,3 @@ jobs:
       with:
         name: sbom-sdk
         path: sbom-sdk.json
-
-  generate-attestations:
-    runs-on: ubuntu-latest
-    needs: [fetch-and-push, generate-sbom]
-    permissions:
-      id-token: write
-      contents: read
-      packages: write
-      attestations: write
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Log in to GitHub Docker registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Download SBOM for ASP.NET
-      uses: actions/download-artifact@v2
-      with:
-        name: sbom-aspnet
-        path: .
-
-    - name: Download SBOM for SDK
-      uses: actions/download-artifact@v2
-      with:
-        name: sbom-sdk
-        path: .
-
-    - name: Generate artifact attestation for ASP.NET
-      uses: actions/attest-build-provenance@v1
-      with:
-        subject-name: ghcr.io/ipsimple/aspnet
-        subject-digest: ${{ needs.fetch-and-push.outputs.aspnet_digest }}
-        push-to-registry: true
-
-    - name: Generate artifact attestation for SDK
-      uses: actions/attest-build-provenance@v1
-      with:
-        subject-name: ghcr.io/ipsimple/sdk
-        subject-digest: ${{ needs.fetch-and-push.outputs.sdk_digest }}
-        push-to-registry: true
-
-    - name: Generate SBOM attestation for ASP.NET
-      uses: actions/attest-sbom@v1
-      with:
-        subject-name: ghcr.io/ipsimple/aspnet
-        subject-digest: ${{ needs.fetch-and-push.outputs.aspnet_digest }}
-        sbom-path: sbom-aspnet.json
-        push-to-registry: true
-
-    - name: Generate SBOM attestation for SDK
-      uses: actions/attest-sbom@v1
-      with:
-        subject-name: ghcr.io/ipsimple/sdk
-        subject-digest: ${{ needs.fetch-and-push.outputs.sdk_digest }}
-        sbom-path: sbom-sdk.json
-        push-to-registry: true
