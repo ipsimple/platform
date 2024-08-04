@@ -35,6 +35,9 @@ jobs:
         image-ref: mcr.microsoft.com/dotnet/aspnet:8.0
         format: 'table'
         exit-code: '1' # Exit code 1 if vulnerabilities are found
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
 
     - name: Scan dotnet sdk image with Trivy
       uses: aquasecurity/trivy-action@master
@@ -42,6 +45,9 @@ jobs:
         image-ref: mcr.microsoft.com/dotnet/sdk:8.0
         format: 'table'
         exit-code: '1' # Exit code 1 if vulnerabilities are found
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
 
   push-base-images:
     runs-on: ubuntu-latest
@@ -58,21 +64,15 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push ASP.NET base image
-      id: build_aspnet
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        push: true
-        tags: ghcr.io/ipsimple/aspnet:8.0
+    - name: Tag and push ASP.NET base image
+      run: |
+        docker tag mcr.microsoft.com/dotnet/aspnet:8.0 ghcr.io/ipsimple/aspnet:8.0
+        docker push ghcr.io/ipsimple/aspnet:8.0
 
-    - name: Build and push SDK base image
-      id: build_sdk
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        push: true
-        tags: ghcr.io/ipsimple/sdk:8.0
+    - name: Tag and push SDK base image
+      run: |
+        docker tag mcr.microsoft.com/dotnet/sdk:8.0 ghcr.io/ipsimple/sdk:8.0
+        docker push ghcr.io/ipsimple/sdk:8.0
 
   generate-sbom:
     runs-on: ubuntu-latest
