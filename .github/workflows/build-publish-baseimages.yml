@@ -11,6 +11,11 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
+
+    outputs:
+      aspnet_digest: ${{ steps.push_aspnet.outputs.digest }}
+      sdk_digest: ${{ steps.push_sdk.outputs.digest }}
 
     steps:
     - name: Checkout repository
@@ -77,6 +82,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
     - name: Checkout repository
@@ -95,11 +102,11 @@ jobs:
 
     - name: Generate SBOM for ASP.NET
       run: |
-        syft docker:ghcr.io/ipsimple/aspnet:8.0 -o syft-json > sbom-aspnet.json
+        syft packages docker:ghcr.io/ipsimple/aspnet:8.0 -o syft-json > sbom-aspnet.json
 
     - name: Generate SBOM for SDK
       run: |
-        syft docker:ghcr.io/ipsimple/sdk:8.0 -o syft-json > sbom-sdk.json
+        syft packages docker:ghcr.io/ipsimple/sdk:8.0 -o syft-json > sbom-sdk.json
 
     - name: Upload SBOM for ASP.NET
       uses: actions/upload-artifact@v2
