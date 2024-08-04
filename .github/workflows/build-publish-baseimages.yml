@@ -10,8 +10,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-      attestations: write
       id-token: write
+      attestations: write
+
+    outputs:
+      aspnet_digest: ${{ steps.push_aspnet.outputs.digest }}
+      sdk_digest: ${{ steps.push_sdk.outputs.digest }}
 
     steps:
     - name: Checkout repository
@@ -30,14 +34,18 @@ jobs:
         docker pull mcr.microsoft.com/dotnet/sdk:8.0
 
     - name: Tag and push ASP.NET base image
+      id: push_aspnet
       run: |
         docker tag mcr.microsoft.com/dotnet/aspnet:8.0 ghcr.io/ipsimple/aspnet:8.0
         docker push ghcr.io/ipsimple/aspnet:8.0
+        echo "::set-output name=digest::$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/ipsimple/aspnet:8.0 | cut -d'@' -f2)"
 
     - name: Tag and push SDK base image
+      id: push_sdk
       run: |
         docker tag mcr.microsoft.com/dotnet/sdk:8.0 ghcr.io/ipsimple/sdk:8.0
         docker push ghcr.io/ipsimple/sdk:8.0
+        echo "::set-output name=digest::$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/ipsimple/sdk:8.0 | cut -d'@' -f2)"
 
   scan-aspnet-image:
     runs-on: ubuntu-latest
@@ -104,7 +112,7 @@ jobs:
       contents: read
       packages: write
       attestations: write
-
+      
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -113,21 +121,21 @@ jobs:
       uses: actions/attest-build-provenance@v1
       with:
         subject-name: ghcr.io/ipsimple/aspnet
-        subject-digest: ${{ needs.fetch-and-push.outputs.digest }}
+        subject-digest: ${{ needs.fetch-and-push.outputs.aspnet_digest }}
         push-to-registry: true
 
     - name: Generate artifact attestation for SDK
       uses: actions/attest-build-provenance@v1
       with:
         subject-name: ghcr.io/ipsimple/sdk
-        subject-digest: ${{ needs.fetch-and-push.outputs.digest }}
+        subject-digest: ${{ needs.fetch-and-push.outputs.sdk_digest }}
         push-to-registry: true
 
     - name: Generate SBOM attestation for ASP.NET
       uses: actions/attest-sbom@v1
       with:
         subject-name: ghcr.io/ipsimple/aspnet
-        subject-digest: ${{ needs.fetch-and-push.outputs.digest }}
+        subject-digest: ${{ needs.fetch-and-push.outputs.aspnet_digest }}
         sbom-path: sbom-aspnet.json
         push-to-registry: true
 
@@ -135,6 +143,6 @@ jobs:
       uses: actions/attest-sbom@v1
       with:
         subject-name: ghcr.io/ipsimple/sdk
-        subject-digest: ${{ needs.fetch-and-push.outputs.digest }}
+        subject-digest: ${{ needs.fetch-and-push.outputs.sdk_digest }}
         sbom-path: sbom-sdk.json
         push-to-registry: true
