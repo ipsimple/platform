@@ -1,0 +1,149 @@
+name: Build & Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  determine-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.determine_version.outputs.version }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Determine the version
+      id: determine_version
+      run: |
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+        git fetch --tags
+        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+        if [ -z "$LATEST_TAG" ]; then
+          NEW_TAG="1.0.0"
+        else
+          VERSION_REGEX="^([0-9]+)\.([0-9]+)\.([0-9]+)$"
+          if [[ $LATEST_TAG =~ $VERSION_REGEX ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+            MINOR=$((MINOR + 1))
+            if [ $MINOR -eq 100 ]; then
+              MINOR=0
+              MAJOR=$((MAJOR + 1))
+            fi
+            NEW_TAG="$MAJOR.$MINOR.$PATCH"
+          else
+            echo "Latest tag is not in the expected format: $LATEST_TAG"
+            exit 1
+          fi
+        fi
+        echo "version=$NEW_TAG" >> $GITHUB_ENV
+        echo "::set-output name=version::$NEW_TAG"
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: determine-version
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Build the application
+      run: dotnet build --configuration Release
+
+    - name: Run tests
+      run: dotnet test --no-build --verbosity normal
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: [determine-version, build-and-test]
+    steps:
+    - name: Create GitHub release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ needs.determine-version.outputs.version }}
+        release_name: Release ${{ needs.determine-version.outputs.version }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+
+    - name: Upload .NET binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: dotnet-binaries
+        path: '**/bin/Release/**'
+
+  build-and-push-docker:
+    runs-on: ubuntu-latest
+    needs: publish-release
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Log in to GitHub Docker registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      run: |
+        docker build -t ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} .
+        docker push ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
+
+    - name: Attach Docker image to release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
+
+  generate-sbom:
+    runs-on: ubuntu-latest
+    needs: build-and-push-docker
+    steps:
+    - name: Install Syft
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+
+    - name: Generate SBOM
+      run: |
+        syft packages docker:ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} -o syft-json > sbom.json
+
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v2
+      with:
+        name: sbom
+        path: sbom.json
+
+  scan-sdk-image:
+    runs-on: ubuntu-latest
+    needs: determine-version
+    steps:
+    - name: Scan SDK base image with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ghcr.io/ipsimple/sdk:8.0
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+
+  scan-aspnet-image:
+    runs-on: ubuntu-latest
+    needs: determine-version
+    steps:
+    - name: Scan ASP.NET base image with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ghcr.io/ipsimple/aspnet:8.0
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
