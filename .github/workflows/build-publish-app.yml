@@ -53,11 +53,18 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Build the application
-      run: dotnet build --configuration Release
-
+    - name: Build solution
+      run: dotnet build src/IpSimple.Platform.sln --configuration Release
+      
     - name: Run tests
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test src/IpSimple.Platform.sln --configuration Release --no-build
+      
+
+    # - name: Build the application
+    #   run: dotnet build --configuration Release
+
+    # - name: Run tests
+    #   run: dotnet test --no-build --verbosity normal
 
   publish-release:
     runs-on: ubuntu-latest
