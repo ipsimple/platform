@@ -68,8 +68,18 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Run tests
-      run: dotnet test **/*.Tests.csproj --configuration Release --no-build
+    - name: Find and run all test projects
+      run: |
+        for test_project in $(find . -name "*.Tests.csproj"); do
+          dotnet test "$test_project" --configuration Release --no-build --logger "trx;LogFileName=test_results.trx" --results-directory "TestResults"
+        done
+
+    - name: Publish Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: dotnet-results
+        path: TestResults/
+      if: ${{ always() }}
 
   publish-release:
     runs-on: ubuntu-latest
@@ -85,7 +95,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload .NET binaries
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: dotnet-binaries
         path: '**/bin/Release/**'
@@ -122,7 +132,7 @@ jobs:
         syft packages docker:ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} -o syft-json > sbom.json
 
     - name: Upload SBOM
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: sbom
         path: sbom.json
