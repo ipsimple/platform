@@ -18,10 +18,10 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         git fetch --tags
-
+    
         # Fetch the latest valid tag that matches the expected pattern
         LATEST_TAG=$(git tag --list | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
-
+    
         if [ -z "$LATEST_TAG" ]; then
           NEW_TAG="v0.0.1"
         else
@@ -37,12 +37,18 @@ jobs:
             fi
             NEW_TAG="v$MAJOR.$MINOR.$PATCH"
           else
-            echo "Latest tag is not in the expected format: $LATEST_TAG"
+            echo "Error: Latest tag is not in the expected format: $LATEST_TAG"
             exit 1
           fi
         fi
-
+    
+        # Output the version to GitHub Actions log
+        echo "Generated version: $NEW_TAG"
+        
+        # Set the version as an output
         echo "version=$NEW_TAG" >> $GITHUB_ENV
+        echo "::set-output name=version::$NEW_TAG"
+    
 
   setup-dotnet:
     runs-on: ubuntu-latest
