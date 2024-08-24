@@ -38,33 +38,27 @@ jobs:
             exit 1
           fi
         fi
-        echo "version=$NEW_TAG" >> $GITHUB_ENV        
+        echo "version=$NEW_TAG" >> $GITHUB_ENV
 
-  checkout:
+  setup-dotnet:
     runs-on: ubuntu-latest
     needs: determine-version
     outputs:
-      source-directory: ${{ steps.checkout.outputs.source-directory }}
-    steps:
-    - name: Checkout repository
-      id: checkout
-      uses: actions/checkout@v4
-
-    - name: List files #For troubleshooting purposes, list out the directory structure
-      run: ls -R
-
-  build:
-    runs-on: ubuntu-latest
-    needs: checkout
+      dotnet-installed: ${{ steps.setup_dotnet.outputs.success }}
     steps:
     - name: Setup .NET
+      id: setup_dotnet
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
 
-    - name: Change directory to src
-      run: cd src
-      
+  build:
+    runs-on: ubuntu-latest
+    needs: setup-dotnet
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Build solution
       run: dotnet build src/IpSimple.Platform.sln --configuration Release
 
