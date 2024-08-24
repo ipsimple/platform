@@ -42,7 +42,6 @@ jobs:
 
   setup-dotnet:
     runs-on: ubuntu-latest
-    needs: determine-version
     outputs:
       dotnet-installed: ${{ steps.setup_dotnet.outputs.success }}
     steps:
@@ -54,7 +53,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: setup-dotnet
+    needs: [determine-version, setup-dotnet]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -66,6 +65,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
     - name: Run tests
       run: dotnet test src/IpSimple.Platform.sln --configuration Release --no-build
 
