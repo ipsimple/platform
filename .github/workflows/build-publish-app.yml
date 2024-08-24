@@ -41,13 +41,20 @@ jobs:
         echo "version=$NEW_TAG" >> $GITHUB_ENV
         echo "::set-output name=version::$NEW_TAG"
 
-  build-and-test:
+  checkout:
     runs-on: ubuntu-latest
     needs: determine-version
+    outputs:
+      source-directory: ${{ steps.checkout.outputs.source-directory }}
     steps:
     - name: Checkout repository
+      id: checkout
       uses: actions/checkout@v2
 
+  build:
+    runs-on: ubuntu-latest
+    needs: checkout
+    steps:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
@@ -55,29 +62,26 @@ jobs:
 
     - name: Build solution
       run: dotnet build src/IpSimple.Platform.sln --configuration Release
-      
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
     - name: Run tests
       run: dotnet test src/IpSimple.Platform.sln --configuration Release --no-build
-      
-
-    # - name: Build the application
-    #   run: dotnet build --configuration Release
-
-    # - name: Run tests
-    #   run: dotnet test --no-build --verbosity normal
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [determine-version, build-and-test]
+    needs: [determine-version, test]
     steps:
-    - name: Create GitHub release
-      uses: actions/create-release@v1
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ needs.determine-version.outputs.version }}
-        release_name: Release ${{ needs.determine-version.outputs.version }}
-        draft: false
-        prerelease: false
-        generate_release_notes: true
+        name: Release ${{ needs.determine-version.outputs.version }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload .NET binaries
       uses: actions/upload-artifact@v2
@@ -103,11 +107,6 @@ jobs:
       run: |
         docker build -t ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} .
         docker push ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
-
-    - name: Attach Docker image to release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
 
   generate-sbom:
     runs-on: ubuntu-latest
