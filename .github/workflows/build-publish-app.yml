@@ -129,6 +129,7 @@ jobs:
 
     - name: Build and push Docker image
       run: |
+        echo "Using version: ${{ needs.determine-version.outputs.version }}"
         docker build -t ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} .
         docker push ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
 
