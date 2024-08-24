@@ -50,7 +50,7 @@ jobs:
       id: checkout
       uses: actions/checkout@v4
 
-    - name: List files
+    - name: List files #For troubleshooting purposes, list out the directory structure
       run: ls -R
 
   build:
@@ -62,6 +62,9 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
+    - name: Change directory to src
+      run: cd src
+      
     - name: Build solution
       run: dotnet build src/IpSimple.Platform.sln --configuration Release
 
