@@ -140,8 +140,7 @@ jobs:
     - name: Build and push Docker image
       run: |
         echo "Using version: ${{ needs.determine-version.outputs.version }}"
-        cd src/IpSimple.PublicIp.Api
-        docker build -t ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} .
+        docker build -f src/IpSimple.PublicIp.Api/Dockerfile -t ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} src/IpSimple.PublicIp.Api
         docker push ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
 
   generate-sbom:
