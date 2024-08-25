@@ -73,7 +73,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [determine-version, build]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
     - name: Publish Test Results
       uses: actions/upload-artifact@v4
       with:
-        name: dotnet-results
+        name: ipsimple-unit-test-results-${{ needs.determine-version.outputs.version }}
         path: TestResults/
       if: ${{ always() }}
 
@@ -114,14 +114,23 @@ jobs:
       with:
         tag_name: ${{ needs.determine-version.outputs.version }}
         name: Release ${{ needs.determine-version.outputs.version }}
+        generate_release_notes: true
+        append_body: |
+          ## Docker Image
+
+          [Docker Image on GitHub Packages](https://github.com/ipsimple/platform/pkgs/container/ipsimple-app/versions) page will list all the available versions, please refer to the version ${{ needs.determine-version.outputs.version }} for this release
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: List bin/Release directory contents for troubleshooting
+      run: ls -R src/**/bin/Release
+
     - name: Upload .NET binaries
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: dotnet-binaries
-        path: '**/bin/Release/**'
+        path: src/**/bin/Release/**
 
   build-and-push-docker:
     runs-on: ubuntu-latest
@@ -131,7 +140,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Log in to GitHub Docker registry
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -140,8 +149,8 @@ jobs:
     - name: Build and push Docker image
       run: |
          echo "Using version: ${{ needs.determine-version.outputs.version }}"
-         docker build -f src/IpSimple.PublicIp.Api/Dockerfile -t ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} src/
-         docker push ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
+         docker build -f src/IpSimple.PublicIp.Api/Dockerfile -t ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} src/
+         docker push ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }}
 
   generate-sbom:
     runs-on: ubuntu-latest
@@ -158,5 +167,5 @@ jobs:
     - name: Upload SBOM
       uses: actions/upload-artifact@v4
       with:
-        name: sbom
+        name: ipsimple-${{ needs.determine-version.outputs.version }}-sbom
         path: sbom.json
