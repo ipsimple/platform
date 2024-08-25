@@ -67,6 +67,7 @@ jobs:
 
   codeql-scan:
     runs-on: ubuntu-latest
+    needs: [determine-version, setup-dotnet]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -156,7 +157,7 @@ jobs:
 
   build-and-push-docker:
     runs-on: ubuntu-latest
-    needs: [determine-version, publish-release]
+    needs: [determine-version, publish-release, codeql-scan]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -176,7 +177,7 @@ jobs:
 
   generate-sbom:
     runs-on: ubuntu-latest
-    needs: [determine-version, build-and-push-docker]
+    needs: [determine-version, build-and-push-docker, codeql-scan]
     steps:
     - name: Install Syft
       run: |
