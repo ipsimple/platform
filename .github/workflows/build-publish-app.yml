@@ -3,6 +3,11 @@ name: Build & Release
 on:
   workflow_dispatch:
 
+# on:
+#   push:
+#     branches:
+#       - main
+
 jobs:
   determine-version:
     runs-on: ubuntu-latest
@@ -69,7 +74,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Build solution
-      run: dotnet build src/IpSimple.Platform.sln --configuration Release
+      run: dotnet build src/IpSimple.Platform.sln --configuration Release --output src/IpSimple.Platform/bin/Release
 
   test:
     runs-on: ubuntu-latest
@@ -123,14 +128,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: List bin/Release directory contents for troubleshooting
-      run: ls -R src/**/bin/Release
+    - name: List all files in the src directory for troubleshooting
+      run: ls -R src/
 
     - name: Upload .NET binaries
       uses: actions/upload-artifact@v4
       with:
         name: dotnet-binaries
-        path: src/**/bin/Release/**
+        path: src/IpSimple.Platform/bin/Release/**
 
   build-and-push-docker:
     runs-on: ubuntu-latest
