@@ -167,7 +167,7 @@ jobs:
 
     - name: Generate SBOM
       run: |
-        syft packages docker:ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} -o syft-json > sbom.json
+        syft scan docker:ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} -o syft-json > sbom.json
 
     - name: Upload SBOM
       uses: actions/upload-artifact@v4
