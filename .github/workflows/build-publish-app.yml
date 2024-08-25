@@ -2,6 +2,9 @@ name: Build & Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   determine-version:
@@ -10,7 +13,7 @@ jobs:
       version: ${{ steps.determine_version.outputs.version }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Determine the version
       id: determine_version
@@ -18,75 +21,151 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         git fetch --tags
-        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+    
+        # Fetch the latest valid tag that matches the expected pattern
+        LATEST_TAG=$(git tag --list | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+    
         if [ -z "$LATEST_TAG" ]; then
-          NEW_TAG="1.0.0"
+          NEW_TAG="v0.0.1"
         else
-          VERSION_REGEX="^([0-9]+)\.([0-9]+)\.([0-9]+)$"
+          VERSION_REGEX="^v([0-9]+)\.([0-9]+)\.([0-9]+)$"
           if [[ $LATEST_TAG =~ $VERSION_REGEX ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
             PATCH="${BASH_REMATCH[3]}"
             MINOR=$((MINOR + 1))
-            if [ $MINOR -eq 100 ]; then
+            if [ $MINOR -eq 100]; then
               MINOR=0
               MAJOR=$((MAJOR + 1))
             fi
-            NEW_TAG="$MAJOR.$MINOR.$PATCH"
+            NEW_TAG="v$MAJOR.$MINOR.$PATCH"
           else
-            echo "Latest tag is not in the expected format: $LATEST_TAG"
+            echo "Error: Latest tag is not in the expected format: $LATEST_TAG"
             exit 1
           fi
         fi
+    
+        # Output the version to GitHub Actions log
+        echo "Generated version: $NEW_TAG"
+        
+        # Set the version as an output
         echo "version=$NEW_TAG" >> $GITHUB_ENV
         echo "::set-output name=version::$NEW_TAG"
+    
 
-  build-and-test:
+  setup-dotnet:
     runs-on: ubuntu-latest
-    needs: determine-version
+    outputs:
+      dotnet-installed: ${{ steps.setup_dotnet.outputs.success }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      id: setup_dotnet
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
 
-    - name: Build the application
-      run: dotnet build --configuration Release
+  codeql-scan:
+    runs-on: ubuntu-latest
+    needs: [determine-version, setup-dotnet]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    - name: Run tests
-      run: dotnet test --no-build --verbosity normal
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: 'csharp'
+
+    - name: Build the code
+      run: dotnet build src/IpSimple.Platform.sln --configuration Release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [determine-version, codeql-scan]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build solution
+      run: dotnet build src/IpSimple.Platform.sln --configuration Release --output src/IpSimple.Platform/bin/Release
+
+  test:
+    runs-on: ubuntu-latest
+    needs: [determine-version, build, codeql-scan]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Find and run all test projects
+      run: |
+        for test_project in $(find . -name "*.Tests.csproj"); do
+          dotnet test "$test_project" --configuration Release --logger "trx;LogFileName=test_results.trx" --results-directory "TestResults"
+        done
+
+    - name: Publish Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: ipsimple-unit-test-results-${{ needs.determine-version.outputs.version }}
+        path: TestResults/
+      if: ${{ always() }}
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [determine-version, build-and-test]
+    needs: [determine-version, build, test, codeql-scan]
+    if: success()
     steps:
-    - name: Create GitHub release
-      uses: actions/create-release@v1
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Configure Git user
+      run: |
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "GitHub Actions Bot"
+
+    - name: Create Git Tag
+      run: |
+        git tag -a ${{ needs.determine-version.outputs.version }} -m "Release version ${{ needs.determine-version.outputs.version }}"
+        git push origin ${{ needs.determine-version.outputs.version }}
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ needs.determine-version.outputs.version }}
-        release_name: Release ${{ needs.determine-version.outputs.version }}
-        draft: false
-        prerelease: false
+        name: Release ${{ needs.determine-version.outputs.version }}
         generate_release_notes: true
+        append_body: |
+          ## Docker Image
+          
+          The Docker image for this release is available on [GitHub Packages](https://github.com/ipsimple/platform/pkgs/container/ipsimple-app/versions). You can pull this image using:
+          
+          ```bash
+          docker pull ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }}
+          ```
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: List all files in the src directory for troubleshooting
+      run: ls -R src/
 
     - name: Upload .NET binaries
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: dotnet-binaries
-        path: '**/bin/Release/**'
+        path: src/IpSimple.Platform/bin/Release/**
 
   build-and-push-docker:
     runs-on: ubuntu-latest
-    needs: publish-release
+    needs: [determine-version, publish-release, codeql-scan]
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Log in to GitHub Docker registry
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -94,17 +173,13 @@ jobs:
 
     - name: Build and push Docker image
       run: |
-        docker build -t ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} .
-        docker push ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
-
-    - name: Attach Docker image to release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }}
+         echo "Using version: ${{ needs.determine-version.outputs.version }}"
+         docker build -f src/IpSimple.PublicIp.Api/Dockerfile -t ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} src/
+         docker push ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }}
 
   generate-sbom:
     runs-on: ubuntu-latest
-    needs: build-and-push-docker
+    needs: [determine-version, build-and-push-docker, codeql-scan]
     steps:
     - name: Install Syft
       run: |
@@ -112,10 +187,10 @@ jobs:
 
     - name: Generate SBOM
       run: |
-        syft packages docker:ghcr.io/ipsimple/app:${{ needs.determine-version.outputs.version }} -o syft-json > sbom.json
+        syft scan docker:ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} -o syft-json > sbom.json
 
     - name: Upload SBOM
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: sbom
+        name: ipsimple-${{ needs.determine-version.outputs.version }}-sbom
         path: sbom.json

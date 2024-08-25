@@ -1,0 +1,87 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  setup-dotnet:
+    runs-on: ubuntu-latest
+    outputs:
+      dotnet-installed: ${{ steps.setup_dotnet.outputs.success }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      id: setup_dotnet
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+  codeql-scan:
+    runs-on: ubuntu-latest
+    needs: setup-dotnet
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: 'csharp'
+
+    - name: Build the code
+      run: dotnet build src/IpSimple.Platform.sln --configuration Release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  build:
+    runs-on: ubuntu-latest
+    needs: codeql-scan
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build solution
+      run: dotnet build src/IpSimple.Platform.sln --configuration Release --output src/IpSimple.Platform/bin/Release
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Find and run all test projects
+      run: |
+        for test_project in $(find . -name "*.Tests.csproj"); do
+          dotnet test "$test_project" --configuration Release --logger "trx;LogFileName=test_results.trx" --results-directory "TestResults"
+        done
+
+    - name: Publish Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: ipsimple-unit-test-results
+        path: TestResults/
+      if: ${{ always() }}
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to GitHub Docker registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Docker image (validation only)
+      run: |
+         docker build -f src/IpSimple.PublicIp.Api/Dockerfile -t ghcr.io/ipsimple/ipsimple-app-pr-validation src/

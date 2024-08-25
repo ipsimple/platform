@@ -1,11 +1,18 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+FROM ghcr.io/ipsimple/aspnet:8.0 AS base
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+LABEL org.opencontainers.image.title="IpSimple App"
+LABEL org.opencontainers.image.description="A reliable and scalable public IP address API, designed for seamless integration into any application. It offers unlimited usage, compatibility with IPv4 and IPv6, high availability, open-source transparency, privacy focus, and future-proof reliability. Use cases include network management, cloud infrastructure, security applications, and developer tools."
+LABEL org.opencontainers.image.url="https://github.com/ipsimple/platform"
+LABEL org.opencontainers.image.authors="ipsimple org"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.vendor="ipsimple org"
+LABEL org.opencontainers.image.source="https://github.com/ipsimple/platform"
+
 USER app
 WORKDIR /app
 EXPOSE 8080
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM ghcr.io/ipsimple/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["IpSimple.PublicIp.Api/IpSimple.PublicIp.Api.csproj", "IpSimple.PublicIp.Api/"]
