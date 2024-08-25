@@ -3,10 +3,9 @@ name: Build & Release
 on:
   workflow_dispatch:
 
-# on:
-#   push:
-#     branches:
-#       - main
+  # push:
+  #   branches:
+  #     - main
 
 jobs:
   determine-version:
@@ -36,7 +35,7 @@ jobs:
             MINOR="${BASH_REMATCH[2]}"
             PATCH="${BASH_REMATCH[3]}"
             MINOR=$((MINOR + 1))
-            if [ $MINOR -eq 100 ]; then
+            if [ $MINOR -eq 100]; then
               MINOR=0
               MAJOR=$((MAJOR + 1))
             fi
@@ -96,9 +95,26 @@ jobs:
         path: TestResults/
       if: ${{ always() }}
 
-  publish-release:
+  codeql-scan:
+    name: CodeQL Analysis
     runs-on: ubuntu-latest
     needs: [determine-version, test]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: 'csharp'
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: [determine-version, codeql-scan]
+    if: success()
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
