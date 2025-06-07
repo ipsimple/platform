@@ -109,13 +109,13 @@ jobs:
         syft packages docker:ghcr.io/ipsimple/sdk:9.0 -o syft-json > sbom-sdk.json
 
     - name: Upload SBOM for ASP.NET
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: sbom-aspnet
         path: sbom-aspnet.json
 
     - name: Upload SBOM for SDK
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: sbom-sdk
         path: sbom-sdk.json
