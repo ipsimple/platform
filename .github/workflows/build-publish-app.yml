@@ -63,13 +63,17 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
-
   codeql-scan:
     runs-on: ubuntu-latest
     needs: [determine-version, setup-dotnet]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
@@ -81,7 +85,6 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
-
   build:
     runs-on: ubuntu-latest
     needs: [determine-version, codeql-scan]
@@ -89,15 +92,24 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
     - name: Build solution
       run: dotnet build src/IpSimple.Platform.sln --configuration Release --output src/IpSimple.Platform/bin/Release
-
   test:
     runs-on: ubuntu-latest
     needs: [determine-version, build, codeql-scan]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
     
     - name: Find and run all test projects
       run: |
