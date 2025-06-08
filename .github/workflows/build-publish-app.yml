@@ -51,10 +51,8 @@ jobs:
         # Set the version as an output
         echo "version=$NEW_TAG" >> $GITHUB_ENV
         echo "version=$NEW_TAG" >> $GITHUB_OUTPUT
-
   codeql-scan:
     runs-on: ubuntu-latest
-    needs: [determine-version]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -232,6 +230,7 @@ jobs:
           --name ca-ipsimple-api-prod-eus \
           --resource-group rg-ipsimple-core-prod-easus \
           --image ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} \
+          --target-port 8080 \
           --output table
 
     - name: Verify Deployment
