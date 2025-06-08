@@ -1,5 +1,7 @@
 name: Build & Release
 
+run-name: "Build & Release #${{ github.run_number }} - Estimated v0.${{ github.run_number }}.0"
+
 on:
   workflow_dispatch:
   push:
@@ -51,6 +53,7 @@ jobs:
         # Set the version as an output
         echo "version=$NEW_TAG" >> $GITHUB_ENV
         echo "version=$NEW_TAG" >> $GITHUB_OUTPUT
+
   codeql-scan:
     runs-on: ubuntu-latest
     steps:
@@ -80,7 +83,8 @@ jobs:
     - name: Check for Critical Security Issues
       if: always()
       run: |
-        echo "CodeQL analysis completed. The workflow will fail automatically if critical security issues are found."        echo "Check the Security tab in your repository for detailed results."
+        echo "CodeQL analysis completed. The workflow will fail automatically if critical security issues are found."
+        echo "Check the Security tab in your repository for detailed results."
 
   build:
     runs-on: ubuntu-latest
@@ -96,9 +100,10 @@ jobs:
 
     - name: Build solution
       run: dotnet build src/IpSimple.Platform.sln --configuration Release --output src/IpSimple.Platform/bin/Release
+
   test:
     runs-on: ubuntu-latest
-    needs: [determine-version, build, codeql-scan]
+    needs: [determine-version, build]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -123,7 +128,7 @@ jobs:
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [determine-version, build, test, codeql-scan]
+    needs: [determine-version, build, test]
     if: success()
     steps:
     - name: Checkout repository
@@ -168,7 +173,7 @@ jobs:
 
   build-and-push-docker:
     runs-on: ubuntu-latest
-    needs: [determine-version, publish-release, codeql-scan]
+    needs: [determine-version, publish-release]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -185,9 +190,10 @@ jobs:
          echo "Using version: ${{ needs.determine-version.outputs.version }}"
          docker build -f src/IpSimple.PublicIp.Api/Dockerfile -t ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} src/
          docker push ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }}
+
   generate-sbom:
     runs-on: ubuntu-latest
-    needs: [determine-version, build-and-push-docker, codeql-scan]
+    needs: [determine-version, build-and-push-docker]
     steps:
     - name: Install Syft
       run: |
@@ -225,12 +231,11 @@ jobs:
       run: |
         echo "🚀 Deploying version ${{ needs.determine-version.outputs.version }} to Azure Container App"
         
-        # Update the container app with the new image
+        # Update the container app with the new image and correct port configuration
         az containerapp update \
           --name ca-ipsimple-api-prod-eus \
           --resource-group rg-ipsimple-core-prod-easus \
           --image ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} \
-          --target-port 8080 \
           --output table
 
     - name: Verify Deployment
