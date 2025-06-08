@@ -1,0 +1,32 @@
+name: "CodeQL Security Configuration"
+
+# Disable default queries and use security-focused queries
+disable-default-queries: false
+
+# Include security and quality queries
+queries:
+  - uses: security-and-quality
+  - uses: security-experimental
+
+# Paths to ignore during analysis
+paths-ignore:
+  - "**/bin/**"
+  - "**/obj/**"
+  - "**/TestResults/**"
+  - "**/*.Test*/**"
+
+# Paths to include (optional - if not specified, all paths are included)
+paths:
+  - "src/**"
+
+# Configure query suites to focus on security
+query-filters:
+  - exclude:
+      id: "cpp/fixme-comment"
+  - include:
+      kind:
+        - "problem"
+        - "path-problem"
+      severity:
+        - "error"
+        - "warning"

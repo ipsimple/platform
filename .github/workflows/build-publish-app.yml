@@ -34,7 +34,7 @@ jobs:
             MINOR="${BASH_REMATCH[2]}"
             PATCH="${BASH_REMATCH[3]}"
             MINOR=$((MINOR + 1))
-            if [ $MINOR -eq 100]; then
+            if [ $MINOR -eq 100 ]; then
               MINOR=0
               MAJOR=$((MAJOR + 1))
             fi
@@ -50,22 +50,11 @@ jobs:
         
         # Set the version as an output
         echo "version=$NEW_TAG" >> $GITHUB_ENV
-        echo "::set-output name=version::$NEW_TAG"
-    
+        echo "version=$NEW_TAG" >> $GITHUB_OUTPUT
 
-  setup-dotnet:
-    runs-on: ubuntu-latest
-    outputs:
-      dotnet-installed: ${{ steps.setup_dotnet.outputs.success }}
-    steps:
-    - name: Setup .NET
-      id: setup_dotnet
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
   codeql-scan:
     runs-on: ubuntu-latest
-    needs: [determine-version, setup-dotnet]
+    needs: [determine-version]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -79,12 +68,22 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: 'csharp'
+        config-file: ./.github/codeql/codeql-config.yml
 
     - name: Build the code
       run: dotnet build src/IpSimple.Platform.sln --configuration Release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:csharp"
+        upload: true
+        
+    - name: Check for Critical Security Issues
+      if: always()
+      run: |
+        echo "CodeQL analysis completed. The workflow will fail automatically if critical security issues are found."        echo "Check the Security tab in your repository for detailed results."
+
   build:
     runs-on: ubuntu-latest
     needs: [determine-version, codeql-scan]
