@@ -62,7 +62,7 @@ jobs:
       id: setup_dotnet
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '9.0.x'
 
   codeql-scan:
     runs-on: ubuntu-latest
