@@ -29,6 +29,15 @@ public class Program
 
         var ipAddressService = app.Services.GetRequiredService<IIpAddressService>();
 
+        app.MapGet("/", ipAddressService.GetClientIpv4)
+           .WithName("GetPublicIPv4")
+           .WithOpenApi(operation =>
+           {
+               operation.Summary = "Public IPv4 address";
+               operation.Description = "This endpoint returns the public IPv4 address of the client making the request.";
+               return operation;
+           });
+
         app.MapGet("/ipv4", ipAddressService.GetClientIpv4)
            .WithName("GetPublicIPv4")
            .WithOpenApi(operation =>

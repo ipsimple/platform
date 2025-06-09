@@ -1,7 +1,6 @@
 name: Build & Release
 
 run-name: "Build & Release #${{ github.run_number }}
-
 on:
   workflow_dispatch:
   push:
@@ -260,3 +259,4 @@ jobs:
         echo "Container App: ca-ipsimple-api-prod-eus"
         echo "Resource Group: rg-ipsimple-core-prod-easus"
         echo "Image: ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }}"
+        
