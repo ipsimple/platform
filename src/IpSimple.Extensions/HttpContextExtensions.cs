@@ -1,5 +1,6 @@
 ﻿using IpSimple.Domain;
 using Microsoft.AspNetCore.Http;
+using System.Net;
 
 namespace IpSimple.Extensions;
 
@@ -8,7 +9,7 @@ public static class HttpContextExtensions
     /// <summary>
     /// Gets the client IP address from the HttpContext.
     /// If the request is forwarded by Azure Front Door, it will have the below headers
-    /// 
+    ///
     /// "Via": "HTTP/1.1 Azure",
     /// "X-Azure-ClientIP": "203.211.106.230",
     /// "X-Azure-SocketIP": "203.211.106.230",
@@ -18,7 +19,7 @@ public static class HttpContextExtensions
     /// "X-Forwarded-Host": "api.ipsimple.org",
     /// "X-Forwarded-Proto": "https",
     /// "X-FD-HealthProbe": ""
-    /// 
+    ///
     /// If X-Azure-ClientIP is present, it will be used as the client IP address. If not then the X-Forwarded-For header will be used.
     /// </summary>
     /// <param name="httpContext"></param>
@@ -46,7 +47,7 @@ public static class HttpContextExtensions
 
     /// <summary>
     /// Gets all possible client IP addresses from the X-forwarded-for header.
-    /// 
+    ///
     /// This is useful in some cases where the proxy server might be appending the ip address of the client to the X-forwarded-for header in the wrong order
     /// and it is not the first IP address in the header
     /// </summary>
@@ -62,5 +63,113 @@ public static class HttpContextExtensions
 
         //If we don't actually have the x-forwarded-for header, return null and let the caller decide what to do (either the caller can throw the exception or return something back to the client)
         return null;
+    }    /// <summary>
+    /// Gets the client IPv4 address from the HttpContext.
+    /// Filters out IPv6 addresses and returns only IPv4.
+    /// </summary>
+    /// <param name="httpContext"></param>
+    /// <returns>The client IPv4 address if found, otherwise null.</returns>
+    public static string? GetClientIpv4Address(this HttpContext httpContext)
+    {
+        var clientIp = GetClientIpAddress(httpContext);
+        if (string.IsNullOrEmpty(clientIp))
+        {
+            return null;
+        }
+
+        // Parse all IPs from the string (could be comma-separated)
+        var ips = clientIp.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var ip in ips)
+        {
+            var trimmedIp = ip.Trim().Split(':')[0]; // Remove port if present
+            if (IPAddress.TryParse(trimmedIp, out var ipAddress) && ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            {
+                return trimmedIp;
+            }
+        }
+
+        return null;
+    }    /// <summary>
+    /// Gets the client IPv6 address from the HttpContext.
+    /// Filters out IPv4 addresses and returns only IPv6.
+    /// </summary>
+    /// <param name="httpContext"></param>
+    /// <returns>The client IPv6 address if found, otherwise null.</returns>
+    public static string? GetClientIpv6Address(this HttpContext httpContext)
+    {
+        var clientIp = GetClientIpAddress(httpContext);
+        if (string.IsNullOrEmpty(clientIp))
+        {
+            return null;
+        }
+
+        // Parse all IPs from the string (could be comma-separated)
+        var ips = clientIp.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var ip in ips)
+        {
+            var trimmedIp = ip.Trim().Split(' ')[0]; // Remove any extra info
+            if (IPAddress.TryParse(trimmedIp, out var ipAddress) && ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            {
+                return trimmedIp;
+            }
+        }
+
+        return null;
+    }    /// <summary>
+    /// Gets all possible client IPv4 addresses from the X-forwarded-for header.
+    /// Filters and returns only IPv4 addresses.
+    /// </summary>
+    /// <param name="httpContext"></param>
+    /// <returns>All IPv4 addresses found, otherwise null.</returns>
+    public static string? GetAllPossibleClientIpv4Addresses(this HttpContext httpContext)
+    {
+        var allIps = GetAllPossibleClientIpAddresses(httpContext);
+        if (string.IsNullOrEmpty(allIps))
+        {
+            return null;
+        }
+
+        var ips = allIps.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var ipv4Addresses = new List<string>();
+
+        foreach (var ip in ips)
+        {
+            var trimmedIp = ip.Trim().Split(':')[0]; // Remove port if present
+            if (IPAddress.TryParse(trimmedIp, out var ipAddress) && ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            {
+                ipv4Addresses.Add(trimmedIp);
+            }
+        }
+
+        return ipv4Addresses.Count > 0 ? string.Join(", ", ipv4Addresses) : null;
+    }    /// <summary>
+    /// Gets all possible client IPv6 addresses from the X-forwarded-for header.
+    /// Filters and returns only IPv6 addresses.
+    /// </summary>
+    /// <param name="httpContext"></param>
+    /// <returns>All IPv6 addresses found, otherwise null.</returns>
+    public static string? GetAllPossibleClientIpv6Addresses(this HttpContext httpContext)
+    {
+        var allIps = GetAllPossibleClientIpAddresses(httpContext);
+        if (string.IsNullOrEmpty(allIps))
+        {
+            return null;
+        }
+
+        var ips = allIps.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var ipv6Addresses = new List<string>();
+
+        foreach (var ip in ips)
+        {
+            var trimmedIp = ip.Trim().Split(' ')[0]; // Remove any extra info
+            if (IPAddress.TryParse(trimmedIp, out var ipAddress) && ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            {
+                ipv6Addresses.Add(trimmedIp);
+            }
+        }
+
+        return ipv6Addresses.Count > 0 ? string.Join(", ", ipv6Addresses) : null;
     }
 }

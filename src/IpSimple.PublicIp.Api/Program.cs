@@ -29,7 +29,7 @@ public class Program
 
         var ipAddressService = app.Services.GetRequiredService<IIpAddressService>();
 
-        app.MapGet("/ipv4", ipAddressService.GetClientIp)
+        app.MapGet("/ipv4", ipAddressService.GetClientIpv4)
            .WithName("GetPublicIPv4")
            .WithOpenApi(operation =>
            {
@@ -38,7 +38,7 @@ public class Program
                return operation;
            });
 
-        app.MapGet("/ipv4/all", ipAddressService.GetAllClientIps)
+        app.MapGet("/ipv4/all", ipAddressService.GetAllClientIpv4s)
            .WithName("GetAllPublicIPv4")
            .WithOpenApi(operation =>
            {
@@ -47,7 +47,7 @@ public class Program
                return operation;
            });
 
-        app.MapGet("/ipv6", ipAddressService.GetClientIp)
+        app.MapGet("/ipv6", ipAddressService.GetClientIpv6)
            .WithName("GetPublicIPv6")
            .WithOpenApi(operation =>
            {
@@ -56,7 +56,7 @@ public class Program
                return operation;
            });
 
-        app.MapGet("/ipv6/all", ipAddressService.GetAllClientIps)
+        app.MapGet("/ipv6/all", ipAddressService.GetAllClientIpv6s)
            .WithName("GetAllPublicIPv6")
            .WithOpenApi(operation =>
            {

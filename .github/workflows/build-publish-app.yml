@@ -1,6 +1,6 @@
 name: Build & Release
 
-run-name: "Build & Release #${{ github.run_number }} - Estimated v0.${{ github.run_number }}.0"
+run-name: "Build & Release #${{ github.run_number }}
 
 on:
   workflow_dispatch:
