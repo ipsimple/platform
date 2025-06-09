@@ -30,7 +30,7 @@ public class Program
         var ipAddressService = app.Services.GetRequiredService<IIpAddressService>();
 
         app.MapGet("/", ipAddressService.GetClientIpv4)
-           .WithName("GetPublicIPv4")
+           .WithName("Default")
            .WithOpenApi(operation =>
            {
                operation.Summary = "Public IPv4 address";

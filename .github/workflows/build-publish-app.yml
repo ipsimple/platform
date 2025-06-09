@@ -1,6 +1,6 @@
 name: Build & Release
 
-run-name: "Build & Release #${{ github.run_number }}
+run-name: "Build & Release #${{ github.run_number }}"
 on:
   workflow_dispatch:
   push:
