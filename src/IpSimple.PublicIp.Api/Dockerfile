@@ -1,5 +1,8 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
+# Accept APP_VERSION as a build argument
+ARG APP_VERSION=unknown
+
 LABEL org.opencontainers.image.title="IpSimple App"
 LABEL org.opencontainers.image.description="A reliable and scalable public IP address API, designed for seamless integration into any application. It offers unlimited usage, compatibility with IPv4 and IPv6, high availability, open-source transparency, privacy focus, and future-proof reliability. Use cases include network management, cloud infrastructure, security applications, and developer tools."
 LABEL org.opencontainers.image.url="https://github.com/ipsimple/platform"
@@ -7,6 +10,10 @@ LABEL org.opencontainers.image.authors="ipsimple org"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.vendor="ipsimple org"
 LABEL org.opencontainers.image.source="https://github.com/ipsimple/platform"
+LABEL org.opencontainers.image.version="${APP_VERSION}"
+
+# Set the APP_VERSION environment variable
+ENV APP_VERSION=${APP_VERSION}
 
 USER app
 WORKDIR /app

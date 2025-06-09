@@ -74,6 +74,19 @@ public class Program
                return operation;
            });
 
+        app.MapGet("/version", () =>
+        {
+            var version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "unknown";
+            return Results.Ok(new { version });
+        })
+        .WithName("GetVersion")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "API Version";
+            operation.Description = "Returns the version of the running API (from the APP_VERSION environment variable).";
+            return operation;
+        });
+
         return app;
     }
 }

@@ -235,6 +235,7 @@ jobs:
           --name ca-ipsimple-api-prod-eus \
           --resource-group rg-ipsimple-core-prod-easus \
           --image ghcr.io/ipsimple/ipsimple-app:${{ needs.determine-version.outputs.version }} \
+          --set-env-vars APP_VERSION=${{ needs.determine-version.outputs.version }} \
           --output table
 
     - name: Verify Deployment
