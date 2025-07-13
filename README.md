@@ -38,6 +38,12 @@ curl https://api.ipsimple.org/api/ip/v6
 
 # Get all detected addresses
 curl https://api.ipsimple.org/api/ip/all
+# Get geolocation for client IP
+curl https://api.ipsimple.org/api/ip/geolocation
+# Get geolocation for specific IP
+curl https://api.ipsimple.org/api/ip/geolocation/203.0.113.1
+# Submit bulk IP processing job
+curl -X POST https://api.ipsimple.org/api/ip/bulk -d '{"ips": ["203.0.113.1"]}'
 ```
 
 ### Response Format
@@ -140,8 +146,13 @@ Once running, you can test the following endpoints:
 
 - `GET /api/ip` - Get all IP address information in JSON format
 - `GET /api/ip/v4` - Get IPv4 address only
-- `GET /api/ip/v6` - Get IPv6 address only  
+- `GET /api/ip/v6` - Get IPv6 address only
 - `GET /api/ip/all` - Get all detected IP addresses
+- `GET /api/ip/geolocation` - Geolocation for client IP
+- `GET /api/ip/geolocation/{ip}` - Geolocation for a specific IP
+- `POST /api/ip/bulk` - Submit bulk IP processing job
+- `GET /api/ip/bulk/{jobId}` - Check bulk job status
+- `GET /api/ip/bulk/{jobId}/results` - Download bulk job results
 
 ### Testing the API
 
