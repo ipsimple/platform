@@ -123,3 +123,112 @@ paths:
                     example: ["2a00:1450:400f:80d::200e", "2a00:1450:400f:80d::200f"]
         '429':
           description: Too many requests
+  /all:
+    get:
+      summary: Dual stack IP addresses
+      description: Returns both IPv4 and IPv6 addresses if available.
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [json, plain]
+          required: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "203.0.113.1, 2001:db8::1"
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ipv4:
+                    type: string
+                    example: "203.0.113.1"
+                  ipv6:
+                    type: string
+                    example: "2001:db8::1"
+        '429':
+          description: Too many requests
+  /geolocation:
+    get:
+      summary: Geolocation for client IP
+      description: Returns geolocation metadata for the calling client.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {"message": "Geolocation lookup not yet implemented"}
+  /geolocation/{ipAddress}:
+    get:
+      summary: Geolocation lookup
+      description: Provides geolocation metadata for a specific IP address.
+      parameters:
+        - in: path
+          name: ipAddress
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {"message": "Geolocation lookup not yet implemented"}
+  /bulk:
+    post:
+      summary: Submit bulk IP processing
+      description: Accepts a list of IP addresses for asynchronous processing.
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {"message": "Bulk IP processing not yet implemented"}
+  /bulk/{jobId}:
+    get:
+      summary: Bulk job status
+      description: Retrieves processing status for a submitted bulk IP job.
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {"jobId": "bulk-123", "status": "pending"}
+  /bulk/{jobId}/results:
+    get:
+      summary: Bulk job results
+      description: Gets processed results for a completed bulk IP job.
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {"jobId": "bulk-123", "results": []}
